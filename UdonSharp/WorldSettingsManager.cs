@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDKBase;
 using VRC.Udon;
+using ArchiTech.ProTV;
 
 namespace OtterHaven {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -19,6 +20,7 @@ namespace OtterHaven {
         [SerializeField] private bool sfx = true;
         [SerializeField] private bool doorColliders = true;
         [SerializeField] private bool fireworks = true;
+        [SerializeField] private bool djStuff = false;
         
         [Header("Object References")]
         public GameObject[] objsPens;
@@ -65,6 +67,15 @@ namespace OtterHaven {
 
         [Header("Other")]
         public TextMeshProUGUI instanceOwnerName;
+        public AdminManager adminManager;
+
+        [Header("Dj Stuff")]
+        public Button[] togglesDjStuff;
+        public GameObject[] objsDjStuffEnable;
+        public GameObject[] objsDjStuffDisable;
+        public Collider[] objsDjStuffCollidersEnable;
+        public TVManager mainTvManager;
+        public TVManager[] otherTvManager;
 
         [Header("State colors")]
         public Color32 buttonOn = new Color(15/255f, 132/255f, 12/255f, 255/255f);
@@ -88,6 +99,7 @@ namespace OtterHaven {
             setButtons(togglesPotato, potato);
             setButtons(togglesDoorColliders, doorColliders);
             setButtons(togglesFireworks, fireworks);
+            setButtons(togglesDjStuff, djStuff);
             _setDarknessNormal();
         }
 
@@ -373,6 +385,68 @@ namespace OtterHaven {
                 instanceOwnerName.text = "Unknown";
             } else {
                 instanceOwnerName.text = owner.displayName;
+            }
+        }
+
+        public void _toggleDjStuff() {
+            djStuff = !djStuff;
+            string stateStr = "true";
+            if (!djStuff) {
+                stateStr = "false";
+            }
+            setButtons(togglesDjStuff, djStuff);
+
+            if (!adminManager.isUserAdminOrMod()) {
+                Debug.Log("[OTR_WRLD_SETTINGS] No fun allowed.");
+                return;
+            }
+            Debug.Log($"[OTR_WRLD_SETTINGS] Party mode : {stateStr}");
+
+            // Lock main player
+            if (Utilities.IsValid(mainTvManager)) {
+                if (djStuff) {
+                    mainTvManager._Lock();
+                    mainTvManager._ChangeAudioMode(true); // force 2d
+                } else {
+                    mainTvManager._UnLock();
+                    mainTvManager._ChangeAudioMode(false); // force 3d
+                }
+            }
+
+            // Toggle other players
+            foreach (TVManager tvm in otherTvManager) {
+                if (!Utilities.IsValid(tvm)) { continue; }
+                Debug.Log("[OTR_WRLD_SETTINGS] Setting TV " + tvm.name + " to " + stateStr);
+                if (djStuff) {
+                    tvm._Stop();
+                    tvm._Lock();
+                } else {
+                    tvm._UnLock();
+                }
+            }
+
+            // Toggle non-DJ stuff
+            foreach (GameObject obj in objsDjStuffDisable) {
+                if (!Utilities.IsValid(obj)) { continue; }
+
+                Debug.Log("[OTR_WRLD_SETTINGS] Setting GameObject " + obj.name + " to " + stateStr);
+                obj.SetActive(!djStuff);
+            }
+
+            // Toggle DJ stuff
+            foreach (GameObject obj in objsDjStuffEnable) {
+                if (!Utilities.IsValid(obj)) { continue; }
+
+                Debug.Log("[OTR_WRLD_SETTINGS] Setting GameObject " + obj.name + " to " + stateStr);
+                obj.SetActive(djStuff);
+            }
+            
+            // Enable the collider for the shaft
+            foreach (Collider obj in objsDjStuffCollidersEnable) {
+                if (!Utilities.IsValid(obj)) { continue; }
+
+                Debug.Log("[OTR_WRLD_SETTINGS] Setting GameObject collider " + obj.name + " to " + stateStr);
+                obj.enabled = djStuff;
             }
         }
     }
