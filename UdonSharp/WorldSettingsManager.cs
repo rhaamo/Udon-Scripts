@@ -63,6 +63,9 @@ namespace OtterHaven {
         public Material potatoMatWaterOn;
         public Material potatoMatWaterOff;
 
+        [Header("Other")]
+        public TextMeshProUGUI instanceOwnerName;
+
         [Header("State colors")]
         public Color32 buttonOn = new Color(15/255f, 132/255f, 12/255f, 255/255f);
         public Color32 buttonOffGrey = new Color(89/255f, 89/255f, 89/255f, 255/255f);
@@ -71,6 +74,7 @@ namespace OtterHaven {
         public void Start() {
             Debug.Log("[OTR_WRLD_SETTINGS] Applying default world settings...");
             _ApplyAllSettings();
+            _setInstanceOwnerName();
             Debug.Log("[OTR_WRLD_SETTINGS] Applying default world settings... done");
         }
 
@@ -85,6 +89,14 @@ namespace OtterHaven {
             setButtons(togglesDoorColliders, doorColliders);
             setButtons(togglesFireworks, fireworks);
             _setDarknessNormal();
+        }
+
+        public override void OnPlayerJoined(VRCPlayerApi player) {
+            _setInstanceOwnerName();
+        }
+
+        public override void OnPlayerLeft(VRCPlayerApi player) {
+            _setInstanceOwnerName();
         }
 
         private void setStates(GameObject[] objs, Button[] buttons, bool state) {
@@ -333,6 +345,35 @@ namespace OtterHaven {
 
         public void _worldBuildTimeout() {
             Debug.Log("[OTR_WORLD_SETTINGS] World build check timeout.");
+        }
+
+        public VRCPlayerApi GetInstanceOwner() {
+            VRCPlayerApi[] players = new VRCPlayerApi[100]; // very hard cap uwu
+            VRCPlayerApi.GetPlayers(players);
+            VRCPlayerApi host = null;
+            foreach (var player in players) {
+                if (player.isInstanceOwner) {
+                    host = player;
+                    break;
+                }
+            }
+            if (!Utilities.IsValid(host)) {
+                host = Networking.GetOwner(gameObject);
+            }
+            return host;
+        }
+
+        private void _setInstanceOwnerName() {
+            if (!Utilities.IsValid(instanceOwnerName)) {
+                return;
+            }
+
+            VRCPlayerApi owner = GetInstanceOwner();
+            if (!Utilities.IsValid(owner)) {
+                instanceOwnerName.text = "Unknown";
+            } else {
+                instanceOwnerName.text = owner.displayName;
+            }
         }
     }
 }
