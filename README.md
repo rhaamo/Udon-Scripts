@@ -10,6 +10,10 @@ Nearly all scripts have logging with `[OTR_something]` to easily debug stuff fro
 
 I hope you find them useful for you.
 
+## Separate projects
+- [Camera System](https://github.com/rhaamo/CameraSystem) For worlds: light and full camera systems, fixed and handeld cameras with FOV adjustment
+- [OttLogger](https://github.com/rhaamo/OttLogger) In-world console logger with class/category filtering
+
 ## Scripts
 
 - `World Settings Manager`: Made to have a synced set of parameters for a world (toggle pens, polaroids, colliders, clocks, join alerts, etc.) usable from various panels or udon events, see the related prefab for uses
